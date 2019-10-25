@@ -24,6 +24,17 @@ namespace gismo
 {
 
 template<class T>
+gsMultiPatch<T> gsMultiPatch<T>::coord(const index_t c) const
+{
+    gsMultiPatch<T> result;
+    for ( const_iterator it = m_patches.begin(); it != m_patches.end(); ++it )
+    {
+        result.addPatch( (*it)->coord(c) );
+    }
+    return result;
+}
+
+template<class T>
 gsMultiPatch<T>::gsMultiPatch(const gsGeometry<T> & geo )
     : BaseA( geo.parDim() )
 {
@@ -646,7 +657,7 @@ void gsMultiPatch<T>::repairInterfaces()
 template<class T>
 void gsMultiPatch<T>::locatePoints(const gsMatrix<T> & points,
                                    gsVector<index_t> & pids,
-                                   gsMatrix<T> & preim) const
+                                   gsMatrix<T> & preim, const T accuracy) const
 {
     pids.resize(points.cols());
     pids.setConstant(-1); // -1 implies not in the domain
@@ -660,7 +671,7 @@ void gsMultiPatch<T>::locatePoints(const gsMatrix<T> & points,
         for (size_t k = 0; k!= m_patches.size(); ++k)
         {
             pr = m_patches[k]->parameterRange();
-            m_patches[k]->invertPoints(pt, tmp);
+            m_patches[k]->invertPoints(pt, tmp, accuracy);
             if ( (tmp.array() >= pr.col(0).array()).all()
                  && (tmp.array() <= pr.col(1).array()).all() )
             {

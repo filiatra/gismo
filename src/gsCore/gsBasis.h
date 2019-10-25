@@ -498,6 +498,10 @@ public:
     /// Returns the indices of the basis functions that are nonzero at the domain boundary.
     virtual gsMatrix<unsigned> allBoundary( ) const;
 
+    /// Returns the indices of the basis functions that are zero on the domain boundary.
+    virtual gsMatrix<unsigned> allInterior( ) const;
+
+
     /// Returns the indices of the basis functions that are nonzero at the domain boundary.
     /// If an offset is provided (the default is zero), it will return the indizes of the basis
     /// functions having this offset to the provided boxSide. Note that the offset cannot be

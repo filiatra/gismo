@@ -683,6 +683,32 @@ bool gsMultiBasis<T>::repairInterfaceFindElements(
 }
 
 template<class T>
+void gsMultiBasis<T>::partition(
+    std::vector<gsVector<index_t> > & interior,
+    std::vector<gsVector<index_t> > & boundary,
+    std::vector<std::vector<gsVector<index_t> > >& interface)
+{
+    gsDofMapper dm;
+    getMapper(true,dm,false);
+    for ( gsBoxTopology::biterator it = m_topology.bBegin(); it != m_topology.bEnd(); ++it )
+        dm.markBoundary(it->patch, basis(it->patch).boundary(it->side()) );
+    dm.finalize();
+
+    const index_t sz = this->nBases();
+    interior.resize(sz);
+    boundary.resize(sz);
+    interface.resize(sz);
+    for ( index_t k = 0; k!= sz; ++k ) // for all patches
+    {
+        interior[k] = dm.findFreeUncoupled(k);
+        boundary[k] = dm.findBoundary(k);
+        interface[k].resize(sz);
+        for ( index_t j = 0; j!= sz; ++j )
+            interface[k][j]= dm.findCoupled(k,j);
+    }
+}
+
+template<class T>
 bool gsMultiBasis<T>::repairInterface2d( const boundaryInterface & bi )
 {
     // get direction and orientation maps

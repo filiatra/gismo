@@ -369,7 +369,7 @@ public:
     inline bool is_coupled_index( index_t gl) const
     {
 	   return  (gl < m_numFreeDofs + m_shift                    ) && // is a free dof and
-                    (gl + m_numCpldDofs + 1 > m_numFreeDofs + m_shift);   // is not standard dof
+           (gl + m_numCpldDofs + 1 > m_numFreeDofs + m_shift);   // is not standard dof
     }
 
     /// Returns true if local dof \a i of patch \a k is tagged.
@@ -396,10 +396,13 @@ public:
         return m_numFreeDofs;
     }
 
+    /// Returns the vector of tagged (not eliminated) dofs.
+    const std::vector<index_t> & getTagged() const { return m_tagged; }
+
     /// Returns the number of coupled (not eliminated) dofs.
     index_t coupledSize() const;
 
-    /// Returns the number of tagged (not eliminated) dofs.
+    /// Returns the number of tagged dofs.
     index_t taggedSize() const;
 
     /// Returns the number of eliminated dofs.
@@ -450,7 +453,25 @@ public:
     index_t mapIndex(index_t n) const
     {return m_dofs[n]+m_shift;}
 
+     /// \brief Returns all boundary dofs on patch k (local dof indices)
+     gsVector<index_t> findBoundary(const index_t k) const;
+
+     /// \brief Returns all free dofs on patch k (local dof indices)
+     gsVector<index_t> findFree(const index_t k) const;
+
+     /// \brief Returns all coupled dofs on patch k (local dof indices)
+     gsVector<index_t> findCoupled(const index_t k, const index_t j = -1) const;
+
+     /// \brief Returns all free, not coupled dofs on patch k (local dof indices)
+     gsVector<index_t> findFreeUncoupled(const index_t k) const;
+
+     /// \brief Returns all tagged dofs on patch k (local dof indices)
+     gsVector<index_t> findTagged(const index_t k) const;
+
 private:
+
+    template<class Predicate, class Iterator>
+    static gsVector<index_t> find_impl(Iterator istart, Iterator iend, Predicate pred);
 
     // replace all references to oldIdx by newIdx
     inline void replaceDofGlobally(index_t oldIdx, index_t newIdx);

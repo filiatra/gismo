@@ -120,6 +120,8 @@ public:
 
     const gsGeometry<T> & piece(const index_t i) const { return patch(i); }
 
+    gsMultiPatch<T> coord(const index_t c) const;
+
     index_t nPieces() const { return static_cast<index_t>(m_patches.size()); }
 
     index_t size() const { return 1; }
@@ -299,7 +301,7 @@ public:
     /// \param points
     /// \param pids vector containing for each point the patch id where it belongs (or -1 if not found)
     /// \param preim in each column,  the parametric coordinates of the corresponding point in the patch
-    void locatePoints(const gsMatrix<T> & points, gsVector<index_t> & pids, gsMatrix<T> & preim) const;
+    void locatePoints(const gsMatrix<T> & points, gsVector<index_t> & pids, gsMatrix<T> & preim, const T accuracy = 1e-6) const;
 
     /// @brief For each point in \a points located on patch pid1, locates the parametric coordinates of the point
     ///

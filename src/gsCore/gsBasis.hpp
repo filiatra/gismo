@@ -308,6 +308,18 @@ gsBasis<T>::allBoundary() const
 
 template<class T>
 gsMatrix<unsigned>
+gsBasis<T>::allInterior() const
+{
+    const index_t sz = this->size();
+    gsMatrix<unsigned> all = gsVector<unsigned>::LinSpaced(sz,0,sz-1);
+    gsMatrix<unsigned> bdr = allBoundary();
+    gsMatrix<unsigned> res(all.size()-bdr.size(),1);
+    std::set_difference(all.data(), all.data()+sz, bdr.data(), bdr.data()+bdr.size(),res.data());
+    return res;
+}
+
+template<class T>
+gsMatrix<unsigned>
 gsBasis<T>::boundaryOffset(boxSide const &,unsigned) const
 { GISMO_NO_IMPLEMENTATION }
 
