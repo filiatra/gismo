@@ -15,9 +15,24 @@
 #include <gsCore/gsLinearAlgebra.h>
 #include <gsCore/gsFunctionExpr.h>
 
+#include <basen.hpp> // external
+
+//#include <stdint.h> //for uint32_t
+
 namespace gismo {
 
 namespace internal {
+
+/*
+inline bool is_big_endian()
+  {
+  union {
+        uint32_t i;
+        char c[4];
+    } bint = {0x01020304};
+    return bint.c[0] == 1;
+}
+*/
 
 /*
 template<class Object>
@@ -99,23 +114,87 @@ void getMatrixFromXml ( gsXmlNode * node, unsigned const & rows,
     str.str( node->value() );
     result.resize(rows,cols);
 
-    for (unsigned i=0; i<rows; ++i) // Read is RowMajor
-        for (unsigned j=0; j<cols; ++j)
-            //if ( !(str >> result(i,j) ) )
-              if (! gsGetValue(str,result(i,j)) )
-            {
-                gsWarn<<"XML Warning: Reading matrix of size "<<rows<<"x"<<cols<<" failed.\n";
-                gsWarn<<"Tag: "<< node->name() <<", Matrix entry: ("<<i<<", "<<j<<").\n";
-                return;
-            }
+    gsXmlAttribute * at_format = node->first_attribute("format");
+    if( nullptr==at_format || !strcmp( at_format->value(),"ascii") )
+    {
+        for (unsigned i=0; i<rows; ++i) // Read is RowMajor
+            for (unsigned j=0; j<cols; ++j)
+                //if ( !(str >> result(i,j) ) )
+                if (! gsGetValue(str,result(i,j)) )
+                {
+                    gsWarn<<"XML Warning: Reading matrix of size "<<rows<<"x"<<cols<<" failed.\n";
+                    gsWarn<<"Tag: "<< node->name() <<", Matrix entry: ("<<i<<", "<<j<<").\n";
+                    return;
+                }
+    }
+    else
+    {
+        GISMO_ASSERT( !strcmp( at_format->value(),"binary"),
+                      "Invalid data format "<< at_format->value() );
+        GISMO_ASSERT( nullptr!=node->first_attribute("bytes"), "Missing byte attribute" );
+        GISMO_ASSERT( nullptr!=node->first_attribute("fl"), "Missing fl" );
+        const int bytes = atoi( node->first_attribute("bytes")->value() );
+        GISMO_ENSURE( bytes==sizeof(T),
+                      "Invalid data size "<< bytes<<" != "<< sizeof(T));
+        const bool fl = (0!=atoi( node->first_attribute("fl")->value() ));
+        GISMO_ENSURE( fl==!std::numeric_limits<T>::is_integer,
+                      "Invalid property -- data is not integer, fl="<< fl);
+
+        const long int len = strlen(node->value());
+        char* arr = reinterpret_cast<char*>(result.data());
+        switch(bytes)
+        {
+        case 2:
+            bn::decode_b16(node->value(), node->value()+len, arr);
+            return;
+        case 4:
+            bn::decode_b32(node->value(), node->value()+len, arr);
+            return;
+        case 8:
+            bn::decode_b64(node->value(), node->value()+len, arr);
+            return;
+        default:
+            GISMO_ERROR("Something went notably wrong.. "<< bytes);
+        };
+    }
 }
 
 template<class T>
-gsXmlNode * putMatrixToXml ( gsMatrix<T> const & mat, gsXmlTree & data, std::string name)
+gsXmlNode * putMatrixToXml ( gsMatrix<T> const & mat, gsXmlTree & data, std::string name) // format = binary
 {
-    // Create XML tree node
-    gsXmlNode* new_node = internal::makeNode(name, mat, data);
-    return new_node;
+    std::ostringstream str;
+    // data.formatType() ? ascii, binary
+#if FALSE
+    {
+        return internal::makeNode(name, mat, data);
+    }
+#else
+    {
+        const char* arr = reinterpret_cast<const char*>(mat.data());
+        static const short int n = sizeof(T);
+        std::string enc;
+        enc.reserve(n*mat.size()*1.35);
+        switch(n)
+        {
+        case 2:
+            bn::encode_b16(arr,arr+n*mat.size(), std::back_inserter(enc));
+            break;
+        case 4:
+            bn::encode_b32(arr,arr+n*mat.size(), std::back_inserter(enc));
+            break;
+        case 8:
+            bn::encode_b64(arr,arr+n*mat.size(), std::back_inserter(enc));
+            break;
+        default:
+            GISMO_ERROR("Something went notably wrong.. "<< n);
+        };
+        gsXmlNode* new_node = internal::makeNode(name, enc, data);
+        new_node->append_attribute( makeAttribute("format","binary",data) );
+        new_node->append_attribute( makeAttribute("bytes",n,data) );
+        new_node->append_attribute( makeAttribute("fl",!std::numeric_limits<T>::is_integer,data) );
+        return new_node;
+    }
+#endif
 }
 
 template<class T>
