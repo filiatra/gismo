@@ -83,6 +83,7 @@ namespace internal
 #include <gsTensor/gsTensorDomainBoundaryIterator.h>
 #include <gsTensor/gsGridIterator.h>
 #include <gsTensor/gsGenericTensorBasis.h>
+#include <gsTensor/gsTensorFitting.h>
 
 /* ----------- Nurbs ----------- */
 #include <gsNurbs/gsKnotVector.h>
